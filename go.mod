@@ -1,3 +1,3 @@
-module github/elastic-io/gofdt
+module github.com/markkurossi/gofdt
 
-go 1.22.5
+go 1.26.1
