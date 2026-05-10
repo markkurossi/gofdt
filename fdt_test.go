@@ -34,24 +34,24 @@ func TestFDT_Workflow(t *testing.T) {
 
 	curPHandle := uint32(1)
 
-	fdt.beginNode("")
-	fdt.propU32("#address-cells", 2)
-	fdt.propU32("#size-cells", 2)
-	fdt.propStr("compatible", "ucbbar,riscvemu-bar_dev")
-	fdt.propStr("model", "ucbbar,riscvemu-bare")
+	fdt.BeginNode("")
+	fdt.PropU32("#address-cells", 2)
+	fdt.PropU32("#size-cells", 2)
+	fdt.PropStr("compatible", "ucbbar,riscvemu-bar_dev")
+	fdt.PropStr("model", "ucbbar,riscvemu-bare")
 
 	/* CPU list */
-	fdt.beginNode("cpus")
-	fdt.propU32("#address-cells", 1)
-	fdt.propU32("#size-cells", 0)
-	fdt.propU32("timebase-frequency", RtcFreq)
+	fdt.BeginNode("cpus")
+	fdt.PropU32("#address-cells", 1)
+	fdt.PropU32("#size-cells", 0)
+	fdt.PropU32("timebase-frequency", RtcFreq)
 
 	/* cpu */
-	fdt.beginNodeNum("cpu", 0)
-	fdt.propStr("device_type", "cpu")
-	fdt.propU32("reg", 0)
-	fdt.propStr("status", "okay")
-	fdt.propStr("compatible", "riscv")
+	fdt.BeginNodeNum("cpu", 0)
+	fdt.PropStr("device_type", "cpu")
+	fdt.PropU32("reg", 0)
+	fdt.PropStr("status", "okay")
+	fdt.PropStr("compatible", "riscv")
 
 	maxXLen := 128 * MB
 	misa := 19
@@ -61,30 +61,30 @@ func TestFDT_Workflow(t *testing.T) {
 			isaString += string('a' + byte(i))
 		}
 	}
-	fdt.propStr("riscv,isa", isaString)
-	fdt.propStr("mmu-type", func() string {
+	fdt.PropStr("riscv,isa", isaString)
+	fdt.PropStr("mmu-type", func() string {
 		if maxXLen <= 32 {
 			return "riscv,sv32"
 		} else {
 			return "riscv,sv48"
 		}
 	}())
-	fdt.propU32("clock-frequency", 2000000000)
-	fdt.endNode() // cpu
+	fdt.PropU32("clock-frequency", 2000000000)
+	fdt.EndNode() // cpu
 
-	fdt.beginNode("interrupt-controller")
-	fdt.propU32("#interrupt-cells", 1)
-	fdt.prop("interrupt-controller", nil, 0)
-	fdt.propStr("compatible", "riscv,cpu-intc")
+	fdt.BeginNode("interrupt-controller")
+	fdt.PropU32("#interrupt-cells", 1)
+	fdt.Prop("interrupt-controller", nil, 0)
+	fdt.PropStr("compatible", "riscv,cpu-intc")
 	intCPHandle := curPHandle
 	curPHandle++
-	fdt.propU32("phandle", intCPHandle)
-	fdt.endNode() // interrupt-controller
+	fdt.PropU32("phandle", intCPHandle)
+	fdt.EndNode() // interrupt-controller
 
-	fdt.endNode() // cpus
+	fdt.EndNode() // cpus
 
-	fdt.beginNodeNum("memory", RamBaseAddr)
-	fdt.propStr("device_type", "memory")
+	fdt.BeginNodeNum("memory", RamBaseAddr)
+	fdt.PropStr("device_type", "memory")
 
 	kernelStart := uint64(12)
 	kernelSize := uint64(1024 * 1024 * 16) // 16MB
@@ -94,77 +94,77 @@ func TestFDT_Workflow(t *testing.T) {
 		uint32(kernelStart + kernelSize>>32),
 		uint32(kernelStart + kernelSize),
 	}
-	fdt.propTabU32("reg", &tab[0], 4)
-	fdt.endNode() // memory
+	fdt.PropTabU32("reg", &tab[0], 4)
+	fdt.EndNode() // memory
 
-	fdt.beginNode("htif")
-	fdt.propStr("compatible", "ucb,htif0")
-	fdt.endNode() // htif
+	fdt.BeginNode("htif")
+	fdt.PropStr("compatible", "ucb,htif0")
+	fdt.EndNode() // htif
 
-	fdt.beginNode("soc")
-	fdt.propU32("#address-cells", 2)
-	fdt.propU32("#size-cells", 2)
-	fdt.propTabStr("compatible", "ucbbar,riscvemu-bar-soc", "simple-bus")
+	fdt.BeginNode("soc")
+	fdt.PropU32("#address-cells", 2)
+	fdt.PropU32("#size-cells", 2)
+	fdt.PropTabStr("compatible", "ucbbar,riscvemu-bar-soc", "simple-bus")
 	//fdt.prop("ranges", nil, 0)
 
-	fdt.beginNodeNum("clint", ClintBaseAddr)
-	fdt.propStr("compatible", "riscv,clint0")
+	fdt.BeginNodeNum("clint", ClintBaseAddr)
+	fdt.PropStr("compatible", "riscv,clint0")
 
 	tab[0] = intCPHandle
 	tab[1] = 3 // M IPI irq
 	tab[2] = intCPHandle
 	tab[3] = 7 // M timer irq
-	fdt.propTabU32("interrupts-extended", &tab[0], 4)
+	fdt.PropTabU32("interrupts-extended", &tab[0], 4)
 
-	fdt.propTabU64Double("reg", ClintBaseAddr, ClintSize)
+	fdt.PropTabU64Double("reg", ClintBaseAddr, ClintSize)
 
-	fdt.endNode() // clint
+	fdt.EndNode() // clint
 
-	fdt.beginNodeNum("plic", PLICBaseAddr)
-	fdt.propU32("#interrupt-cells", 1)
-	fdt.prop("interrupt-controller", nil, 0)
-	fdt.propStr("compatible", "riscv,plic0")
-	fdt.propU32("riscv,ndev", 31)
-	fdt.propTabU64Double("reg", PLICBaseAddr, PLICSize)
+	fdt.BeginNodeNum("plic", PLICBaseAddr)
+	fdt.PropU32("#interrupt-cells", 1)
+	fdt.Prop("interrupt-controller", nil, 0)
+	fdt.PropStr("compatible", "riscv,plic0")
+	fdt.PropU32("riscv,ndev", 31)
+	fdt.PropTabU64Double("reg", PLICBaseAddr, PLICSize)
 	tab[0] = intCPHandle
 	tab[1] = 9 // S ext irq
 	tab[2] = intCPHandle
 	tab[3] = 11 // M ext irq
-	fdt.propTabU32("interrupts-extended", &tab[0], 4)
+	fdt.PropTabU32("interrupts-extended", &tab[0], 4)
 	plicPHandle := curPHandle
 	curPHandle++
-	fdt.propU32("phandle", plicPHandle)
-	fdt.endNode() // plic
+	fdt.PropU32("phandle", plicPHandle)
+	fdt.EndNode() // plic
 
 	VIRTIoCount := 3
 	for i := 0; i < VIRTIoCount; i++ {
-		fdt.beginNodeNum("virtio", uint64(VIRTIOBaseAddr+i*VIRTIOSize))
-		fdt.propStr("compatible", "virtio,mmio")
-		fdt.propTabU64Double("reg", uint64(VIRTIOBaseAddr+i*VIRTIOSize), VIRTIOSize)
+		fdt.BeginNodeNum("virtio", uint64(VIRTIOBaseAddr+i*VIRTIOSize))
+		fdt.PropStr("compatible", "virtio,mmio")
+		fdt.PropTabU64Double("reg", uint64(VIRTIOBaseAddr+i*VIRTIOSize), VIRTIOSize)
 		tab[0] = plicPHandle
 		tab[1] = VirtualIOIrq + uint32(i)
-		fdt.propTabU32("interrupts-extended", &tab[0], 2)
-		fdt.endNode() // virtio
+		fdt.PropTabU32("interrupts-extended", &tab[0], 2)
+		fdt.EndNode() // virtio
 	}
 
-	fdt.endNode() // soc
+	fdt.EndNode() // soc
 
-	fdt.beginNode("chosen")
+	fdt.BeginNode("chosen")
 	cmdLine := "loglevel=3 console=hvc0 root=/dev/vda rw"
-	fdt.propStr("bootargs", cmdLine)
+	fdt.PropStr("bootargs", cmdLine)
 	if kernelSize > 0 {
-		fdt.propTabU64("riscv,kernel-start", kernelStart)
-		fdt.propTabU64("riscv,kernel-end", kernelStart+kernelSize)
+		fdt.PropTabU64("riscv,kernel-start", kernelStart)
+		fdt.PropTabU64("riscv,kernel-end", kernelStart+kernelSize)
 	}
 
 	initrdSize := uint64(30)
 	initrdStart := uint64(10)
 	if initrdSize > 0 {
-		fdt.propTabU64("linux,initrd-start", initrdStart)
-		fdt.propTabU64("linux,initrd-end", initrdStart+initrdSize)
+		fdt.PropTabU64("linux,initrd-start", initrdStart)
+		fdt.PropTabU64("linux,initrd-end", initrdStart+initrdSize)
 	}
-	fdt.endNode()
-	fdt.endNode()
+	fdt.EndNode()
+	fdt.EndNode()
 
-	fdt.dumpDTB("./output.dtb")
+	fdt.DumpDTB("./output.dtb")
 }

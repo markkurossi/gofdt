@@ -69,13 +69,13 @@ func (f *FDT) alloc(len int) {
 	}
 }
 
-func (f *FDT) put32(v uint32) {
+func (f *FDT) Put32(v uint32) {
 	f.alloc(f.tabLen + 1)
 	f.tab[f.tabLen] = cpuToBE32(v)
 	f.tabLen++
 }
 
-func (f *FDT) putData(data []byte, l int) {
+func (f *FDT) PutData(data []byte, l int) {
 	if data == nil {
 		return
 	}
@@ -104,26 +104,26 @@ func (f *FDT) putData(data []byte, l int) {
 	}
 }
 
-func (f *FDT) beginNode(name string) {
-	f.put32(FdtBeginNode)
-	f.putData([]byte(name), len(name)+1)
+func (f *FDT) BeginNode(name string) {
+	f.Put32(FdtBeginNode)
+	f.PutData([]byte(name), len(name)+1)
 	f.openNodeCount++
 }
 
-func (f *FDT) beginNodeNum(name string, n uint64) {
-	f.beginNode(fmt.Sprintf("%s@%x", name, n))
+func (f *FDT) BeginNodeNum(name string, n uint64) {
+	f.BeginNode(fmt.Sprintf("%s@%x", name, n))
 }
 
-func (f *FDT) endNode() {
-	f.put32(FdtEndNode)
+func (f *FDT) EndNode() {
+	f.Put32(FdtEndNode)
 	f.openNodeCount--
 }
 
-func (f *FDT) endFdt() {
-	f.put32(FdtEnd)
+func (f *FDT) EndFdt() {
+	f.Put32(FdtEnd)
 }
 
-func (f *FDT) getStringOffset(name string) int {
+func (f *FDT) GetStringOffset(name string) int {
 	pos := strings.Index(string(f.stringTable[:f.stringTableLen]), name)
 	if pos != -1 {
 		return pos
@@ -146,42 +146,42 @@ func (f *FDT) getStringOffset(name string) int {
 	return pos
 }
 
-func (f *FDT) prop(name string, data []byte, dataLen int) {
-	f.put32(FdtProp)
-	f.put32(uint32(dataLen))
-	f.put32(uint32(f.getStringOffset(name)))
-	f.putData(data, dataLen)
+func (f *FDT) Prop(name string, data []byte, dataLen int) {
+	f.Put32(FdtProp)
+	f.Put32(uint32(dataLen))
+	f.Put32(uint32(f.GetStringOffset(name)))
+	f.PutData(data, dataLen)
 }
 
-func (f *FDT) propTabU32(name string, tab *uint32, tabLen int) {
-	f.put32(FdtProp)
-	f.put32(uint32(tabLen * int(unsafe.Sizeof(uint32(0)))))
-	f.put32(uint32(f.getStringOffset(name)))
+func (f *FDT) PropTabU32(name string, tab *uint32, tabLen int) {
+	f.Put32(FdtProp)
+	f.Put32(uint32(tabLen * int(unsafe.Sizeof(uint32(0)))))
+	f.Put32(uint32(f.GetStringOffset(name)))
 	for i := 0; i < tabLen; i++ {
 		tabArr := (*[1 << 30]uint32)(ptr(tab))[:tabLen]
-		f.put32(tabArr[i])
+		f.Put32(tabArr[i])
 	}
 }
 
-func (f *FDT) propU32(name string, val uint32) {
-	f.propTabU32(name, &val, 1)
+func (f *FDT) PropU32(name string, val uint32) {
+	f.PropTabU32(name, &val, 1)
 }
 
-func (f *FDT) propTabU64(name string, v0 uint64) {
+func (f *FDT) PropTabU64(name string, v0 uint64) {
 	tab := [2]uint32{uint32(v0 >> 32), uint32(v0)}
-	f.propTabU32(name, &tab[0], 2)
+	f.PropTabU32(name, &tab[0], 2)
 }
 
-func (f *FDT) propTabU64Double(name string, v0, v1 uint64) {
+func (f *FDT) PropTabU64Double(name string, v0, v1 uint64) {
 	tab := [4]uint32{uint32(v0 >> 32), uint32(v0), uint32(v1 >> 32), uint32(v1)}
-	f.propTabU32(name, &tab[0], 4)
+	f.PropTabU32(name, &tab[0], 4)
 }
 
-func (f *FDT) propStr(name, str string) {
-	f.prop(name, []byte(str), len(str)+1)
+func (f *FDT) PropStr(name, str string) {
+	f.Prop(name, []byte(str), len(str)+1)
 }
 
-func (f *FDT) propTabStr(name string, args ...string) {
+func (f *FDT) PropTabStr(name string, args ...string) {
 	var size int
 	for _, str := range args {
 		size += len(str) + 1
@@ -196,13 +196,13 @@ func (f *FDT) propTabStr(name string, args ...string) {
 		offset++
 	}
 
-	f.prop(name, tab, offset)
+	f.Prop(name, tab, offset)
 }
 
-func (f *FDT) output() int {
+func (f *FDT) Output() int {
 	assert(f.openNodeCount == 0, fmt.Errorf("openNodeCount must be 0, current: %d", f.openNodeCount).Error())
 
-	f.endFdt()
+	f.EndFdt()
 
 	dtStructSize := f.tabLen * int(unsafe.Sizeof(uint32(0)))
 	dtStringsSize := f.stringTableLen
@@ -251,14 +251,14 @@ func (f *FDT) output() int {
 	return pos
 }
 
-func (f *FDT) dumpDTB(file string) {
+func (f *FDT) DumpDTB(file string) {
 	fp, err := os.Create(file)
 	if err != nil {
 		panic(err)
 	}
 	defer fp.Close()
 
-	_, err = fp.Write(pointerToBytesArrayWithLen(f.p, f.output()))
+	_, err = fp.Write(pointerToBytesArrayWithLen(f.p, f.Output()))
 	if err != nil {
 		panic(err)
 	}
